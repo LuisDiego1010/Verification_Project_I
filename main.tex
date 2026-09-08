@@ -1,6 +1,13 @@
 \documentclass[12pt]{article}
 \usepackage{float}
 \usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\LT@output}{\vss}{\vskip 0pt plus 1fil minus 1pt}{}{}
+\patchcmd{\LT@output}{\vss}{\vskip 0pt plus 1fil minus 1pt}{}{}
+\makeatother
 \usepackage{url}
 \usepackage{amssymb, amsmath}
 \usepackage{graphicx} % Required for inserting images
@@ -10,36 +17,41 @@
 \addto\captionsspanish{% Replace "Table of Contents" with "Índice" in Spanish
   \renewcommand{\contentsname}%
     {Índice}%
-    \usepackage{titlesec}
+}
+\usepackage{titlesec}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \titleformat{\section}[block]{\normalfont\Large\bfseries}{\thesection}{1em}{}
 \titleformat{\subsection}[block]{\normalfont\large\bfseries}{\thesubsection}{1em}{}
 
 \begin{document}
 
 \begin{titlepage}
-\begin{figure}
+\IfFileExists{fig/logo-tec.png}{%
+\begin{figure}[H]
     \centering
     \vspace{3cm}
-    \includegraphics[scale=0.6]{W.png}
+    \includegraphics[scale=0.6]{fig/logo-tec.png}
     
 \end{figure}
+}{}
     \centering
     \vspace*{-0.5cm}
     
-    \section*{Escuela de Ingeniería Electrónica}
+    {\Large\bfseries Escuela de Ingeniería Electrónica\par}
+    \vspace{1em}
     
-    \section*{Verificación Funcional de Circuitos Integrados}
+    {\Large\bfseries Verificación Funcional de Circuitos Integrados\par}
     \vspace{4cm}
 
-    \section*{Proyecto I: Test Plan.}
+    {\Large\bfseries Proyecto I:\@ Test Plan.\par}
     
     \vspace{4cm}
     
     \large
-    \text{Luis Diego Garcia Rojas - 2020124283}\\
-    \text{Cristhian Lezcano Fernández - 2018111011}\\
+    Luis Diego Garcia Rojas \textendash{} 2020124283\\
+    Cristhian Lezcano Fernández \textendash{} 2018111011\\
     \vfill
-    \text {II Semestre 2026}
+    II Semestre 2026
   
     
     
@@ -62,18 +74,19 @@ Las FIFOs no forman parte del dispositivo bajo prueba: cada dispositivo tiene un
 
 
 \subsection{Señales e Interfaces Principales.}
-Para lograr una cobertura funcional alta, el ambiente debe someter al DUT a diferentes niveles de estrés.
+Las direcciones de las señales se describen desde el punto de vista del DUT. Conviene aclarar que \texttt{push} y \texttt{pop} están nombradas respecto de las FIFOs del dispositivo y no respecto del bus, por lo que ambas son salidas del DUT.
 \begin{itemize}
     \item \textbf{Señales de control:} \\
-    $clk, reset:$ La señal reset debe de limpiar toda la información de los dispositivos.
+    \texttt{clk}, \texttt{reset}: La señal reset debe de limpiar toda la información de los dispositivos.
     
     \item \textbf{Señales de Solicitud:} \\
-    $pndng:$ Señal que indica que un dispositivo tiene una transacción pendiente por enviar. \\
-    $push / pop:$ Señales de control para escribir (push) o leer (pop) datos de las FIFOs.  
+    \texttt{pndng} (entrada): Señal que indica que un dispositivo tiene una transacción pendiente por enviar. \\
+    \texttt{pop} (salida): Pulso con el que el bus extrae un paquete de la FIFO de salida del dispositivo transmisor. \\
+    \texttt{push} (salida): Pulso con el que el bus deposita un paquete recibido en la FIFO de entrada del dispositivo destino.
     
     \item \textbf{Buses de datos:} \\
-    $D-push$: Bus de entrada de datos hacia el DUT.\\
-    $D-pop:$ Bus de salida de datos desde el DUT hacia el dispositivo.
+    \texttt{D\_pop} (entrada): Paquete que el dispositivo transmisor entrega al bus.\\
+    \texttt{D\_push} (salida): Paquete que el bus entrega al dispositivo receptor.
 \end{itemize}
 
 \subsection{Formato del paquete}
@@ -128,17 +141,111 @@ La aleatorización es un aspecto primordial para verificar el funcionamiento cor
 \begin{itemize}
     \item \textbf{Número de transacciones: }\\ Aleatorizar cuántos mensajes envía cada objeto para así poder forzar que un dispositivo envíe el 90\% del tráfico mientras los demás envían poco y así probar cuellos de botella.
     \item \textbf{Datos transmitidos: }\\ Los datos que pasan a través del bus serán aleatorios para simular diferentes escenarios de comunicación.
-    
     \item \textbf{Dispositivo que inicia la comunicación: }\\ Aleatorizar cuál de los dispositivos o en estos casos, cual de las FIFOs inicia la comunicación para asegurar que todos los dispositivos puedan interactuar adecuadamente.
+    \item \textbf{Dirección de destino: }\\ Aleatorizar hacia cuál dispositivo va dirigido cada paquete, pudiendo además cargar la distribución hacia un mismo receptor para ver cómo responde cuando le llega tráfico de todos lados a la vez.
+    \item \textbf{Identificador de broadcast: }\\ Aleatorizar cada cuánto se envía un paquete en modo difusión en lugar de dirigirlo a un solo destino, dejando ese porcentaje configurable desde el test para poder mezclar ambos tipos de tráfico en distintas proporciones.
+    \item \textbf{Mensajes con error de direccionamiento: }\\ Aleatorizar el envío de paquetes hacia direcciones que no existen en el sistema, también con un porcentaje configurable, para poder correr tanto pruebas limpias como pruebas donde se busca ver que el bus no se bloquee.
     \item \textbf{Largo de los paquetes:} \\Restringir la aleatorización estrictamente a los tamaños soportados que son de 16, 32 o 64 bits.
     \item \textbf{Tiempo de acceso al bus:}\\ Aleatorizar el tiempo en que los dispositivos solicitan acceso al bus para simular contenciones y tiempos de espera variables.
     \item \textbf{Tiempos de envío:}\\ Aleatorizar la cantidad de ciclos de reloj entre la generación de un paquete y el siguiente.
-    
 \end{itemize}
 
+\newpage
+\section{Plan de Pruebas}
 
+\begin{longtable}{P{\dimexpr0.10\textwidth-2\tabcolsep\relax}P{\dimexpr0.20\textwidth-2\tabcolsep\relax}P{\dimexpr0.33\textwidth-2\tabcolsep\relax}P{\dimexpr0.37\textwidth-2\tabcolsep\relax}}
+\toprule
+\textbf{ID} & \textbf{Objetivo} & \textbf{Configuración} & \textbf{Criterio de aprobación} \\
+\midrule
+\endfirsthead%
 
+\toprule
+\textbf{ID} & \textbf{Objetivo} & \textbf{Configuración} & \textbf{Criterio de aprobación} \\
+\midrule
+\endhead%
 
+TP-01 & Reset del sistema & Reset activo al inicio y luego en medio de una transmisión en curso. & Todas las interfaces vuelven a un estado conocido, el bus queda disponible y no se reportan paquetes espurios. \\
+\midrule
 
+TP-02 & Transmisión simple & Un transmisor, un receptor, una transacción, paquete de 32 bits. & El contenido recibido coincide con el enviado y llega únicamente al destino indicado. \\
+\midrule
+
+TP-03 & Anchos de paquete & Transacciones de 16, 32 y 64 bits. & El contenido se preserva íntegro en los tres anchos y la dirección se interpreta correctamente en los 8 bits más significativos. \\
+\midrule
+
+TP-04 & Tráfico secuencial & Cada dispositivo transmite por turnos, sin solicitudes simultáneas. & Todos los paquetes llegan y se conserva el orden entre cada par origen-destino. \\
+\midrule
+
+TP-05 & Cobertura origen-destino & Aleatorización uniforme del origen y del destino sobre todos los dispositivos. & Todos los cruces origen-destino quedan cubiertos, sin discrepancias en el \emph{scoreboard}. \\
+\midrule
+
+TP-06 & Transmisión broadcast & Transacciones dirigidas al identificador de difusión. & Todos los dispositivos reciben una copia del paquete. \\
+\midrule
+
+TP-07 & Mezcla unicast y broadcast & Distribución ponderada entre ambos tipos de tráfico. & No hay pérdida ni duplicación de paquetes de ninguno de los dos tipos. \\
+\midrule
+
+TP-08 & Acceso simultáneo & Todos los dispositivos solicitan el bus en el mismo ciclo. & La contención se resuelve sin perder paquetes y todos los transmisores obtienen el bus. \\
+\midrule
+
+TP-09 & Direcciones inválidas & Transacciones dirigidas a direcciones que no corresponden a ningún dispositivo del sistema. & Ningún dispositivo acepta el paquete, el bus queda liberado y las transacciones posteriores se completan con normalidad. \\
+\midrule
+
+TP-10 & Saturación de FIFO & Varios transmisores dirigen tráfico continuo a un mismo destino, con FIFO emulada de profundidad reducida. & El ambiente detecta la condición de FIFO llena y actúa según el comportamiento definido, sin paquetes corruptos. \\
+\midrule
+
+TP-11 & FIFO de salida vacía & Un dispositivo sin paquetes pendientes durante su turno. & El turno se cede sin transmitir y la rotación continúa con normalidad entre los demás dispositivos. \\
+\midrule
+
+TP-12 & Tráfico desbalanceado & Un dispositivo genera el 90\% de las transacciones y el resto genera tráfico mínimo. & Ningún dispositivo queda sin transmitir y el retardo máximo se mantiene acotado. \\
+\midrule
+
+TP-13 & Cambio de turno en transmisión & Cambio de turno provocado mientras una transmisión está a medio camino. & Los registros de turno permanecen alineados entre dispositivos y no se pierden paquetes. \\
+\midrule
+
+TP-14 & Tiempos de envío variables & Retardo aleatorio entre paquetes consecutivos, desde ráfagas continuas hasta envíos dispersos. & El dispositivo opera correctamente tanto en régimen saturado como en régimen disperso. \\
+\midrule
+
+TP-15 & Regresión aleatoria & Todas las variables aleatorizadas de forma simultánea, ejecutando varias semillas distintas. & Cero discrepancias en el \emph{scoreboard} y cobertura funcional por encima de la meta establecida. \\
+\bottomrule
+\caption{Plan de pruebas del Proyecto 1.}\\
+\end{longtable}
+
+\section{Diagramas}
+
+Esta sección presenta los diagramas que describen la estructura del dispositivo bajo prueba, las señales que lo comunican con cada dispositivo y el formato de los paquetes que circulan por el bus.
+
+\subsection{Módulos del sistema}
+
+La Figura \ref{fig:modulos} muestra la organización general del sistema. Cada dispositivo se conecta al bus a través de su propia interfaz, y todas las interfaces comparten una única línea serial. Las FIFOs se dibujan por fuera del recuadro del DUT porque no forman parte del dispositivo bajo prueba: son emuladas por software dentro del ambiente de verificación.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{fig/modulos.png}
+    \caption{Módulos del sistema y su conexión al bus serial compartido.}
+    \label{fig:modulos}
+\end{figure}
+
+\subsection{Señales de la interfaz}
+
+La Figura \ref{fig:senales} detalla las señales que cruzan entre un dispositivo y su interfaz. El sentido de las flechas refleja lo descrito en la Sección 1: \texttt{pndng} y \texttt{D\_pop} son entradas al DUT, mientras que \texttt{pop}, \texttt{push} y \texttt{D\_push} son salidas. Del lado derecho, la conexión al bus es bidireccional porque la misma línea se utiliza para transmitir durante el turno del dispositivo y para recibir el resto del tiempo.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{fig/señales.png}
+    \caption{Señales de comunicación entre el dispositivo y el bus.}
+    \label{fig:senales}
+\end{figure}
+
+\subsection{Formato del paquete}
+
+La Figura \ref{fig:paquete} ilustra la distribución de campos del paquete para los tres anchos soportados. El campo de destino ocupa siempre los 8 bits más significativos, de modo que al aumentar el ancho del paquete lo único que crece es el espacio disponible para el contenido.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{fig/formato_paq.png}
+    \caption{Formato del paquete de comunicación según el ancho configurado.}
+    \label{fig:paquete}
+\end{figure}
 
 \end{document}
