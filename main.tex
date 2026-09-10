@@ -1,27 +1,13 @@
-\documentclass[12pt]{article}
-\usepackage{float}
-\usepackage{array}
-\usepackage{longtable}
-\usepackage{booktabs}
-\usepackage{etoolbox}
-\makeatletter
-\patchcmd{\LT@output}{\vss}{\vskip 0pt plus 1fil minus 1pt}{}{}
-\patchcmd{\LT@output}{\vss}{\vskip 0pt plus 1fil minus 1pt}{}{}
-\makeatother
-\usepackage{url}
-\usepackage{amssymb, amsmath}
-\usepackage{graphicx} % Required for inserting images
-\usepackage[a4paper, left=2cm, right=2cm, top=20mm, bottom=20mm]{geometry}
-\usepackage{blindtext}
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
 \usepackage[spanish]{babel}
-\addto\captionsspanish{% Replace "Table of Contents" with "Índice" in Spanish
-  \renewcommand{\contentsname}%
-    {Índice}%
-}
-\usepackage{titlesec}
-\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
-\titleformat{\section}[block]{\normalfont\Large\bfseries}{\thesection}{1em}{}
-\titleformat{\subsection}[block]{\normalfont\large\bfseries}{\thesubsection}{1em}{}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{xltabular}   % longtable + tabularx
+\geometry{a4paper, margin=1in}
 
 \begin{document}
 
@@ -29,223 +15,233 @@
 \IfFileExists{fig/logo-tec.png}{%
 \begin{figure}[H]
     \centering
-    \vspace{3cm}
+    \vspace{1cm}
     \includegraphics[scale=0.6]{fig/logo-tec.png}
-    
 \end{figure}
 }{}
     \centering
     \vspace*{-0.5cm}
-    
+
     {\Large\bfseries Escuela de Ingeniería Electrónica\par}
     \vspace{1em}
-    
+
     {\Large\bfseries Verificación Funcional de Circuitos Integrados\par}
     \vspace{4cm}
 
     {\Large\bfseries Proyecto I:\@ Test Plan.\par}
-    
+
     \vspace{4cm}
-    
+
     \large
     Luis Diego Garcia Rojas \textendash{} 2020124283\\
     Cristhian Lezcano Fernández \textendash{} 2018111011\\
     \vfill
     II Semestre 2026
-  
-    
-    
-    
 
-    
-    
 \end{titlepage}
-\newpage
-\tableofcontents
-\newpage
-
-\section{Descripción del Dispositivo.}
-El dispositivo es un bus de comunicación serial compartido al que se conectan varios dispositivos, y su función es enrutar paquetes de datos entre ellos. Como la línea de datos es común a todos, solo uno puede transmitir a la vez, y el turno se reparte de forma rotativa. Este arbitraje no es centralizado: cada dispositivo lleva su propio registro del turno actual y todos se mantienen sincronizados mediante una línea de control que indica el cambio de turno, de modo que el acceso se reparte de forma equitativa sin que exista un árbitro único.
-
-Todas las interfaces escuchan siempre la línea, así que reciben todos los paquetes que circulan y luego deciden si les corresponde según el campo de dirección del paquete.
-
-Las FIFOs no forman parte del dispositivo bajo prueba: cada dispositivo tiene una FIFO de salida con los paquetes pendientes por transmitir y una de entrada con los recibidos, y ambas serán emuladas y descritas a nivel de software dentro del ambiente de verificación.
 
 
+% =====================================================================
+\section*{Descripción del dispositivo}
+% =====================================================================
 
-\subsection{Señales e Interfaces Principales.}
-Las direcciones de las señales se describen desde el punto de vista del DUT. Conviene aclarar que \texttt{push} y \texttt{pop} están nombradas respecto de las FIFOs del dispositivo y no respecto del bus, por lo que ambas son salidas del DUT.
-\begin{itemize}
-    \item \textbf{Señales de control:} \\
-    \texttt{clk}, \texttt{reset}: La señal reset debe de limpiar toda la información de los dispositivos.
-    
-    \item \textbf{Señales de Solicitud:} \\
-    \texttt{pndng} (entrada): Señal que indica que un dispositivo tiene una transacción pendiente por enviar. \\
-    \texttt{pop} (salida): Pulso con el que el bus extrae un paquete de la FIFO de salida del dispositivo transmisor. \\
-    \texttt{push} (salida): Pulso con el que el bus deposita un paquete recibido en la FIFO de entrada del dispositivo destino.
-    
-    \item \textbf{Buses de datos:} \\
-    \texttt{D\_pop} (entrada): Paquete que el dispositivo transmisor entrega al bus.\\
-    \texttt{D\_push} (salida): Paquete que el bus entrega al dispositivo receptor.
-\end{itemize}
+El dispositivo bajo prueba es un bus de comunicación serial compartido al
+que se conectan cuatro dispositivos y cuya función es enrutar paquetes de
+datos entre ellos. Como la línea de datos es común a todos, solo uno puede
+transmitir a la vez y el turno se reparte de forma rotativa.
 
-\subsection{Formato del paquete}
+Este arbitraje no es centralizado, sino que cada dispositivo lleva su
+propio registro del turno actual y todos se mantienen sincronizados
+mediante una línea de control que indica el cambio de turno, de modo que
+el acceso se reparte de forma equitativa sin que exista un árbitro único.
+Los identificadores válidos son 0 a 3, el identificador de difusión es 255
+y las direcciones 4 a 254 no corresponden a ningún dispositivo. Las FIFOs
+de entrada y salida son emuladas por el ambiente de verificación y no
+forman parte del dispositivo bajo prueba.
 
-Los 8 bits más significativos son la dirección de destino y el resto es el contenido, sin importar si el paquete es de 16, 32 o 64 bits. Solo cambia el espacio disponible para el contenido: 8, 24 o 56 bits respectivamente.
 
-La dirección se interpreta de tres formas: si coincide con el identificador de un dispositivo, solo ese lo acepta; si es el identificador de difusión (255 por defecto), lo aceptan todos; y si no corresponde a ninguno, el paquete recorre el bus completo y todos lo descartan. Esto último importa para la verificación, porque la dirección se evalúa después de recibir el paquete entero, así que un mensaje mal direccionado sí consume tiempo de bus.
 
-\section{Escenarios.}
 
-\subsection{Casos Generales}
-\begin{itemize}
-    \item \textbf{Transmisión Simple:} \\
-    Envío de un paquete válido de un dispositivo origen a un dispositivo destino específico, verificando que el retardo y los datos coincidan en el Scoreboard.
-    
-    \item \textbf{Tráfico secuencial:} \\
-    Verificar que los dispositivos puedan enviar paquetes en turnos, sin que ninguno interfiera con la transmisión de otro.    
-    \item \textbf{Transmisión Broadcast:} \\
-    Envío de un paquete utilizando el identificador de broadcast para verificar que el mensaje se replique a todos los dispositivos conectados.
-    
-    \item \textbf{Eventos de reset:} \\
-    Se debe verificar que el dispositivo tenga un funcionamiento adecuado para reiniciarse en cuanto se active la señal, incluyendo el caso en que el reset ocurra en medio de una transmisión en curso.
-    
-    \item \textbf{Anchos de paquete:} \\
-    Envío de paquetes de 16, 32 y 64 bits, verificando que el contenido se preserve íntegro en los tres casos y que la dirección se interprete correctamente en los 8 bits más significativos.
-\end{itemize}
+\subsection*{Ambiente de verificación}
 
-\subsection{Casos de Esquina}
-\begin{itemize}
-    \item \textbf{Acceso simultáneo de múltiples dispositivos:} \\
-    Ocurre cuando varios dispositivos intentan acceder al bus a la vez, por lo que se debe verificar que el arbitraje resuelva la contención sin perder paquetes y que todos los transmisores obtengan el bus.
-    
-    \item \textbf{Mensajes con errores de ruteo:} \\
-    Envío de paquetes hacia direcciones de dispositivos que no existen en el sistema. Se debe verificar que ningún dispositivo acepte el paquete, que el bus quede liberado y que las transacciones posteriores se completen normalmente.
-    
-    \item \textbf{Saturación de FIFOs:} \\
-    Dirigir tráfico continuo desde varios transmisores hacia un mismo destino para llenar su FIFO de entrada. Como las FIFOs son emuladas por software, el ambiente es el que detecta la condición y define el comportamiento ante ella.
-    
-    \item \textbf{FIFO de salida vacía:} \\
-     Verificar que un dispositivo sin paquetes pendientes ceda su turno sin transmitir y que la rotación continúe con normalidad entre los demás.
-     
-    \item \textbf{Inanición de dispositivos:} \\
-    Verificar que ningún dispositivo quede sin acceder al bus, incluso cuando otro genere la mayor parte del tráfico.
-    
-    \item \textbf{Cambio de turno durante una transmisión:} \\
-     Verificar el comportamiento del sistema cuando la señal de cambio de turno se activa mientras una transmisión está a medio camino, ya que es la condición en la que los registros de turno de cada dispositivo podrían quedar desalineados entre sí.
-    
-\end{itemize}
+El ambiente instancia un driver por cada dispositivo del bus. El Test
+genera los paquetes y los entrega al Agente, que los reparte entre los
+drivers; cada driver escribe en la FIFO de salida de su dispositivo y
+recibe lo que el bus deposita en la FIFO de entrada. El Checker recoge lo
+observado por los drivers y el Scoreboard lo contrasta contra los
+paquetes que el Test generó. Las aserciones vigilan el protocolo de la
+línea serial y el cambio de turno.
 
-\section{Aleatorización}
-La aleatorización es un aspecto primordial para verificar el funcionamiento correcto del DUT, en este caso se aleatorizaran varias variables para verificar el comportamiento del sistema cuando se le aplican diferentes valores o condiciones de prueba.
-\begin{itemize}
-    \item \textbf{Número de transacciones: }\\ Aleatorizar cuántos mensajes envía cada objeto para así poder forzar que un dispositivo envíe el 90\% del tráfico mientras los demás envían poco y así probar cuellos de botella.
-    \item \textbf{Datos transmitidos: }\\ Los datos que pasan a través del bus serán aleatorios para simular diferentes escenarios de comunicación.
-    \item \textbf{Dispositivo que inicia la comunicación: }\\ Aleatorizar cuál de los dispositivos o en estos casos, cual de las FIFOs inicia la comunicación para asegurar que todos los dispositivos puedan interactuar adecuadamente.
-    \item \textbf{Dirección de destino: }\\ Aleatorizar hacia cuál dispositivo va dirigido cada paquete, pudiendo además cargar la distribución hacia un mismo receptor para ver cómo responde cuando le llega tráfico de todos lados a la vez.
-    \item \textbf{Identificador de broadcast: }\\ Aleatorizar cada cuánto se envía un paquete en modo difusión en lugar de dirigirlo a un solo destino, dejando ese porcentaje configurable desde el test para poder mezclar ambos tipos de tráfico en distintas proporciones.
-    \item \textbf{Mensajes con error de direccionamiento: }\\ Aleatorizar el envío de paquetes hacia direcciones que no existen en el sistema, también con un porcentaje configurable, para poder correr tanto pruebas limpias como pruebas donde se busca ver que el bus no se bloquee.
-    \item \textbf{Largo de los paquetes:} \\Restringir la aleatorización estrictamente a los tamaños soportados que son de 16, 32 o 64 bits.
-    \item \textbf{Tiempo de acceso al bus:}\\ Aleatorizar el tiempo en que los dispositivos solicitan acceso al bus para simular contenciones y tiempos de espera variables.
-    \item \textbf{Tiempos de envío:}\\ Aleatorizar la cantidad de ciclos de reloj entre la generación de un paquete y el siguiente.
-\end{itemize}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{fig/ambiente.png}
+    \caption{Bloques del ambiente de verificación y paquetes de
+    comunicación entre ellos.}
+    \label{fig:ambiente}
+\end{figure}
 
-\newpage
-\section{Plan de Pruebas}
 
-\begin{longtable}{P{\dimexpr0.10\textwidth-2\tabcolsep\relax}P{\dimexpr0.20\textwidth-2\tabcolsep\relax}P{\dimexpr0.33\textwidth-2\tabcolsep\relax}P{\dimexpr0.37\textwidth-2\tabcolsep\relax}}
-\toprule
-\textbf{ID} & \textbf{Objetivo} & \textbf{Configuración} & \textbf{Criterio de aprobación} \\
-\midrule
-\endfirsthead%
+% =====================================================================
+\section*{Test Plan}
+% =====================================================================
+
+Los casos identificados con el prefijo \texttt{TG} corresponden a Casos
+Generales y los identificados con \texttt{TE} a Casos de Esquina.
+
+\renewcommand{\arraystretch}{1.15}
+\footnotesize
+
+\begin{xltabular}{\textwidth}{%
+  >{\bfseries\raggedright\arraybackslash}p{0.11\textwidth}
+  >{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}X
+  >{\raggedright\arraybackslash}X}
 
 \toprule
-\textbf{ID} & \textbf{Objetivo} & \textbf{Configuración} & \textbf{Criterio de aprobación} \\
+\textbf{Nombre} & \textbf{Qué se prueba} & \textbf{Qué se hace} &
+\textbf{Aleatorización y rangos} & \textbf{Criterio de aprobación} \\
 \midrule
-\endhead%
+\endfirsthead
 
-TP-01 & Reset del sistema & Reset activo al inicio y luego en medio de una transmisión en curso. & Todas las interfaces vuelven a un estado conocido, el bus queda disponible y no se reportan paquetes espurios. \\
+\toprule
+\textbf{Nombre} & \textbf{Qué se prueba} & \textbf{Qué se hace} &
+\textbf{Aleatorización y rangos} & \textbf{Criterio de aprobación} \\
 \midrule
+\endhead
 
-TP-02 & Transmisión simple & Un transmisor, un receptor, una transacción, paquete de 32 bits. & El contenido recibido coincide con el enviado y llega únicamente al destino indicado. \\
-\midrule
-
-TP-03 & Anchos de paquete & Transacciones de 16, 32 y 64 bits. & El contenido se preserva íntegro en los tres anchos y la dirección se interpreta correctamente en los 8 bits más significativos. \\
-\midrule
-
-TP-04 & Tráfico secuencial & Cada dispositivo transmite por turnos, sin solicitudes simultáneas. & Todos los paquetes llegan y se conserva el orden entre cada par origen-destino. \\
-\midrule
-
-TP-05 & Cobertura origen-destino & Aleatorización uniforme del origen y del destino sobre todos los dispositivos. & Todos los cruces origen-destino quedan cubiertos, sin discrepancias en el \emph{scoreboard}. \\
-\midrule
-
-TP-06 & Transmisión broadcast & Transacciones dirigidas al identificador de difusión. & Todos los dispositivos reciben una copia del paquete. \\
-\midrule
-
-TP-07 & Mezcla unicast y broadcast & Distribución ponderada entre ambos tipos de tráfico. & No hay pérdida ni duplicación de paquetes de ninguno de los dos tipos. \\
-\midrule
-
-TP-08 & Acceso simultáneo & Todos los dispositivos solicitan el bus en el mismo ciclo. & La contención se resuelve sin perder paquetes y todos los transmisores obtienen el bus. \\
-\midrule
-
-TP-09 & Direcciones inválidas & Transacciones dirigidas a direcciones que no corresponden a ningún dispositivo del sistema. & Ningún dispositivo acepta el paquete, el bus queda liberado y las transacciones posteriores se completan con normalidad. \\
-\midrule
-
-TP-10 & Saturación de FIFO & Varios transmisores dirigen tráfico continuo a un mismo destino, con FIFO emulada de profundidad reducida. & El ambiente detecta la condición de FIFO llena y actúa según el comportamiento definido, sin paquetes corruptos. \\
-\midrule
-
-TP-11 & FIFO de salida vacía & Un dispositivo sin paquetes pendientes durante su turno. & El turno se cede sin transmitir y la rotación continúa con normalidad entre los demás dispositivos. \\
-\midrule
-
-TP-12 & Tráfico desbalanceado & Un dispositivo genera el 90\% de las transacciones y el resto genera tráfico mínimo. & Ningún dispositivo queda sin transmitir y el retardo máximo se mantiene acotado. \\
-\midrule
-
-TP-13 & Cambio de turno en transmisión & Cambio de turno provocado mientras una transmisión está a medio camino. & Los registros de turno permanecen alineados entre dispositivos y no se pierden paquetes. \\
-\midrule
-
-TP-14 & Tiempos de envío variables & Retardo aleatorio entre paquetes consecutivos, desde ráfagas continuas hasta envíos dispersos. & El dispositivo opera correctamente tanto en régimen saturado como en régimen disperso. \\
-\midrule
-
-TP-15 & Regresión aleatoria & Todas las variables aleatorizadas de forma simultánea, ejecutando varias semillas distintas. & Cero discrepancias en el \emph{scoreboard} y cobertura funcional por encima de la meta establecida. \\
 \bottomrule
-\caption{Plan de pruebas del Proyecto 1.}\\
-\end{longtable}
+\endlastfoot
 
-\section{Diagramas}
+\multicolumn{5}{l}{\normalsize\itshape Casos generales} \\
+\cmidrule(r){1-5}
 
-Esta sección presenta los diagramas que describen la estructura del dispositivo bajo prueba, las señales que lo comunican con cada dispositivo y el formato de los paquetes que circulan por el bus.
+TG-01 Transmisión simple y secuencial
+& Enrutamiento del paquete al destino indicado e integridad del
+  contenido.
+& Un transmisor activo por vez; el \emph{scoreboard} compara lo emitido
+  contra lo recibido en cada interfaz.
+& Datos transmitidos: uniforme sobre todo el ancho.\newline
+  Origen y destino: 0--3, con origen distinto del destino.\newline
+  Tiempos de envío: 0--20 ciclos.\newline
+  Paquetes por dispositivo: 100.
+& El contenido recibido coincide exactamente con el enviado, llega
+  únicamente al destino indicado y se conserva el orden correcto de los
+  paquetes en el \emph{scoreboard}. \\
+\midrule[0.02em]
 
-\subsection{Módulos del sistema}
+TG-02 Anchos de paquete
+& Soporte de los tres anchos y decodificación de la dirección en los
+  8 bits más significativos.
+& Transacciones con anchos mezclados dentro de la misma prueba, forzando
+  cambios entre paquetes consecutivos.
+& Largo de los paquetes: $\{16, 32, 64\}$ bits, uniforme.\newline
+  Datos transmitidos: uniforme sobre los bits restantes.\newline
+  Cambios de ancho: $\geq 20$ por prueba.
+& El contenido se preserva íntegro en los tres anchos y la dirección se
+  interpreta correctamente en los 8 bits más significativos. \\
+\midrule[0.02em]
 
-La Figura \ref{fig:modulos} muestra la organización general del sistema. Cada dispositivo se conecta al bus a través de su propia interfaz, y todas las interfaces comparten una única línea serial. Las FIFOs se dibujan por fuera del recuadro del DUT porque no forman parte del dispositivo bajo prueba: son emuladas por software dentro del ambiente de verificación.
+TG-03 Reset del sistema
+& Retorno a un estado conocido desde cualquier punto de la operación,
+  incluido el reset a mitad de una transmisión.
+& Activación del reset en tres escenarios: bus en reposo, paquete en
+  vuelo y cambio de turno.
+& Momento de activación: uniforme dentro de una transacción
+  completa.\newline
+  Duración del pulso: 1--5 ciclos.\newline
+  Escenario: uniforme entre los tres.
+& Todas las interfaces arrancan en un estado conocido, el bus queda
+  disponible y no se reportan paquetes espurios. \\
+\midrule[0.02em]
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{fig/modulos.png}
-    \caption{Módulos del sistema y su conexión al bus serial compartido.}
-    \label{fig:modulos}
-\end{figure}
+TG-04 Rotación del turno
+& Equidad del arbitraje distribuido: ningún dispositivo monopoliza el bus
+  ni queda sin acceso.
+& Tráfico sostenido desde los cuatro dispositivos; se cuentan las
+  concesiones obtenidas por cada uno.
+& Ocupación por dispositivo: 0\,\%--100\,\%.\newline
+  Rondas observadas: $\geq 50$.\newline
+  Instante de arranque: 0--10 ciclos.
+& La diferencia entre dispositivos no supera una concesión por ronda y
+  ninguno accede al bus fuera de su turno. \\
+\midrule
 
-\subsection{Señales de la interfaz}
+\multicolumn{5}{l}{\normalsize\itshape Casos de esquina} \\
+\cmidrule(r){1-5}
 
-La Figura \ref{fig:senales} detalla las señales que cruzan entre un dispositivo y su interfaz. El sentido de las flechas refleja lo descrito en la Sección 1: \texttt{pndng} y \texttt{D\_pop} son entradas al DUT, mientras que \texttt{pop}, \texttt{push} y \texttt{D\_push} son salidas. Del lado derecho, la conexión al bus es bidireccional porque la misma línea se utiliza para transmitir durante el turno del dispositivo y para recibir el resto del tiempo.
+TE-01 Transmisión broadcast
+& Replicación del paquete a todos los dispositivos cuando el destino es
+  el identificador de difusión.
+& Paquetes dirigidos al identificador 255, intercalados con tráfico
+  dirigido a un solo destino.
+& Identificador de broadcast: 5\,\%--30\,\% de los paquetes.\newline
+  Origen: 0--3.\newline
+  Largo y datos: como en TG-02.
+& Todos los dispositivos reciben una copia exacta del paquete y el turno
+  avanza con normalidad. \\
+\midrule[0.02em]
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.85\textwidth]{fig/señales.png}
-    \caption{Señales de comunicación entre el dispositivo y el bus.}
-    \label{fig:senales}
-\end{figure}
+TE-02 Acceso simultáneo
+& Resolución de la contención cuando todos los dispositivos solicitan el
+  bus en el mismo ciclo.
+& Retardos de inicio alineados para que las solicitudes de acceso
+  coincidan exactamente.
+& Dispositivos en contención: 2--4.\newline
+  Eventos por prueba: 10--50.\newline
+  Tiempo de acceso al bus: forzado al mismo ciclo.
+& El arbitraje resuelve la contención sin perder paquetes y todos los
+  transmisores obtienen el bus respetando su turno correspondiente. \\
+\midrule[0.02em]
 
-\subsection{Formato del paquete}
+TE-03 Mensajes con direcciones inválidas
+& Que un destino inexistente no bloquee el bus ni detenga la rotación.
+& Envío de paquetes hacia direcciones no configuradas, intercalados con
+  tráfico válido.
+& Mensajes con error de direccionamiento: 5\,\%--20\,\%.\newline
+  Dirección destino: uniforme en 4--254.
+& Ningún dispositivo acepta el paquete; el mensaje consume su tiempo de
+  bus, pero luego el bus queda liberado y las transacciones posteriores
+  se completan con normalidad. \\
+\midrule[0.02em]
 
-La Figura \ref{fig:paquete} ilustra la distribución de campos del paquete para los tres anchos soportados. El campo de destino ocupa siempre los 8 bits más significativos, de modo que al aumentar el ancho del paquete lo único que crece es el espacio disponible para el contenido.
+TE-04 Overflow de la FIFO
+& Detección de la condición de FIFO de entrada llena, emulada por el
+  ambiente de verificación.
+& Tráfico continuo desde varios transmisores hacia un mismo destino hasta
+  llenar por completo su FIFO de entrada.
+& Dirección de destino: sesgada, 70\,\%--90\,\% hacia un mismo
+  receptor.\newline
+  Receptor saturado: 0--3.\newline
+  Tiempos de envío: 0--2 ciclos.
+& El ambiente detecta la condición de FIFO llena y actúa según el
+  comportamiento definido, sin que se generen paquetes corruptos en el
+  \emph{scoreboard}. \\
+\midrule[0.02em]
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=\textwidth]{fig/formato_paq.png}
-    \caption{Formato del paquete de comunicación según el ancho configurado.}
-    \label{fig:paquete}
-\end{figure}
+TE-05 Underflow de la FIFO
+& Cesión del turno cuando corresponde transmitir y la FIFO de salida está
+  vacía.
+& Generación de ventanas prolongadas sin paquetes pendientes para que el
+  turno llegue con la FIFO vacía.
+& Tiempos de envío: 20--200 ciclos.\newline
+  Número de transacciones: 0--10 por dispositivo.\newline
+  Dispositivos inactivos: 1--3.
+& El dispositivo sin paquetes cede su turno sin transmitir datos erróneos
+  y la rotación del bus continúa con normalidad entre los demás
+  dispositivos conectados. \\
+\midrule[0.02em]
+
+TE-06 Sincronía del turno
+& Que los registros locales de turno de los cuatro dispositivos coincidan
+  en todo momento.
+& Monitor pasivo que muestrea el registro de turno de cada interfaz en
+  cada flanco y los compara entre sí.
+& Momento del reset: uniforme dentro de una ronda.\newline
+  Incorporación de cada dispositivo: 0--3 rondas.
+& Los registros coinciden en todos los ciclos posteriores a la
+  sincronización y nunca hay dos dispositivos con el mismo turno. \\
+
+\end{xltabular}
 
 \end{document}
