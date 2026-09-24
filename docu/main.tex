@@ -41,9 +41,8 @@
 \end{titlepage}
 
 
-% =====================================================================
+
 \section*{Descripción del dispositivo}
-% =====================================================================
 
 El dispositivo bajo prueba es un bus de comunicación serial compartido al
 que se conectan cuatro dispositivos y cuya función es enrutar paquetes de
@@ -60,30 +59,24 @@ de entrada y salida son emuladas por el ambiente de verificación y no
 forman parte del dispositivo bajo prueba.
 
 
-
-
 \subsection*{Ambiente de verificación}
 
-El ambiente instancia un driver por cada dispositivo del bus. El Test
-genera los paquetes y los entrega al Agente, que los reparte entre los
-drivers; cada driver escribe en la FIFO de salida de su dispositivo y
-recibe lo que el bus deposita en la FIFO de entrada. El Checker recoge lo
-observado por los drivers y el Scoreboard lo contrasta contra los
-paquetes que el Test generó. Las aserciones vigilan el protocolo de la
-línea serial y el cambio de turno.
+El Test define las condiciones del escenario y el Generator genera las transacciones de forma aleatoria dentro de esos límites. El Agent las divide en dos: una va al Driver para ejecutarse y otra al Scoreboard para registrar lo esperado.
+
+El Driver es el único que interactúa directamente con el DUT, colocando las transacciones en las FIFOs correspondientes y activando \texttt{pndng}. Estas FIFOs son parte del ambiente de verificación y no del DUT.
+
+El Monitor observa las respuestas del DUT y registra cuándo llegan, además de identificar su origen según la interfaz que tenía el turno. Finalmente, el Checker compara lo esperado con lo observado para verificar el contenido, destino y latencia. Las aserciones complementan esta verificación al supervisar ciclo a ciclo el protocolo de la línea compartida.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{fig/ambiente.png}
+    \includegraphics[width=0.9\textwidth]{fig/ambiente.png}
     \caption{Bloques del ambiente de verificación y paquetes de
     comunicación entre ellos.}
     \label{fig:ambiente}
 \end{figure}
 
 \newpage
-% =====================================================================
 \section*{Test Plan}
-% =====================================================================
 
 Los casos identificados con el prefijo \texttt{TG} corresponden a Casos
 Generales y los identificados con \texttt{TE} a Casos de Esquina.
