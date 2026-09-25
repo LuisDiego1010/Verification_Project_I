@@ -1,7 +1,7 @@
 interface bus_interface #(
-  parameter int drvrs = 4,      // Cantidad de dispositivos conectados
-  parameter int pckg_sz = 16,   // Tamaño del paquete en bits
-  parameter int bits = 1        // Dimensión adicional del prototipo
+  parameter int drvrs = 4,      // Number of connected devices
+  parameter int pckg_sz = 16,   // Bit packet size
+  parameter int bits = 1        // Device dimensions
 ) (
   input logic clk,
   input logic reset
