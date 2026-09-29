@@ -3,7 +3,7 @@
 class generator #(parameter int width = 16);
 
     // The mailbox that will connect to the subsequent layers is declared
-    mailbox mbx;
+    mailbox #(transaction #(width)) mbx;
     // Number of transactions to generate in the test
     int num_transactions;
 
@@ -12,7 +12,7 @@ class generator #(parameter int width = 16);
 
 
     // Constructor is created
-    function new(mailbox mbx_in, int num_tx);
+    function new(mailbox #(transaction #width)) mbx_in, int num_tx);
         this.mbx = mbx_in;
         this.num_transactions = num_tx;
     endfunction

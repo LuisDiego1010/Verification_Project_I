@@ -8,6 +8,7 @@ class transaction #(parameter int width = 16);
 
     // The control and reporting variables are defined
     int src_terminal;
+    int rx_terminal
 
     // Timelines for the CVS report
     real sent_time;
@@ -42,6 +43,11 @@ class transaction #(parameter int width = 16);
     // Hardware package assembly
     function bit [width-1:0] pack();
         return {dst_addr, payload};
+    endfunction
+
+    function void unpack(bit [width-1:0] data);
+        this.dst_addr = data[width-1 : width-8];
+        this.payload = data[width-9 : 0];
     endfunction
 
     // Function to print the resulting content
