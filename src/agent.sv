@@ -1,41 +1,27 @@
-// Class bus_agent.sv. The bus_agent class is responsible for receiving the transactions from the generator and sending the same transaction to the driver and to the scoreboard. It also creates the driver and starts it.
+// Class bus_agent.sv. The bus_agent class is responsible for receiving the transactions from the generator and splitting them: one copy of the handle goes to the driver to be executed and one to the scoreboard as reference.
 class bus_agent #(parameter int width = 16, parameter int drvs = 4);
 
-    mailbox #(transaction #(width)) mbx_gen_agent;
-    mailbox #(transaction #(width)) mbx_agent_driver;
-    mailbox #(transaction #(width)) mbx_agent_sb;
-
-    bus_driver #(width, drvs) driver;
-    virtual dut_compl_if #(width, drvs, 16).DRV vif;
+    mailbox #(transaction #(width, drvs)) gen_agent_mbx;
+    mailbox #(transaction #(width, drvs)) agent_drv_mbx;
+    mailbox #(transaction #(width, drvs)) agent_sb_mbx;
 
     function new(
-        mailbox #(transaction #(width)) mbx_gen,
-        mailbox #(transaction #(width)) mbx_sb,
-        virtual dut_compl_if #(width, drvs, 16).DRV vif_in
+        mailbox #(transaction #(width, drvs)) gen_agent_mbx,
+        mailbox #(transaction #(width, drvs)) agent_drv_mbx,
+        mailbox #(transaction #(width, drvs)) agent_sb_mbx
     );
-        this.mbx_gen_agent = mbx_gen;
-        this.mbx_agent_sb = mbx_sb;
-        this.vif = vif_in;
-        this.mbx_agent_driver = new();
-        this.driver = new(mbx_agent_driver, vif);
+        this.gen_agent_mbx = gen_agent_mbx;
+        this.agent_drv_mbx = agent_drv_mbx;
+        this.agent_sb_mbx = agent_sb_mbx;
     endfunction
 
     task run();
-        transaction #(width) pkt;
-
-        fork
-            driver.run();
-        join_none
-
-        $display("[AGENT] Starting packet routing...");
-
+        transaction #(width, drvs) pkt;
         forever begin
-            mbx_gen_agent.get(pkt);
-
-            mbx_agent_driver.put(pkt);
-            mbx_agent_sb.put(pkt);
-
-            $display("[AGENT] Packet sent to driver and scoreboard (dst: %0d)", pkt.dst_addr);
+            gen_agent_mbx.get(pkt);
+            // Both receive the same handle: the driver writes sent_time on it and the checker reads it through the scoreboard expectation
+            agent_drv_mbx.put(pkt);
+            agent_sb_mbx.put(pkt);
         end
     endtask
 
