@@ -2,12 +2,12 @@
 
 class fifo_emulator #(parameter int width = 16, parameter int id = 0);
 
-    virtual dut_compl_if.DRV vif;
+    virtual dut_compl_if #(width, 4, 16).DRV vif;
 
     // Se usan queues para los hijos
     transaction #(width) pkt_queue[$]; 
 
-    function new(virtual dut_compl_if.DRV vif_in);
+    function new(virtual dut_compl_if #(width, 4, 16).DRV vif_in);
         this.vif = vif_in;
     endfunction
 
@@ -46,8 +46,8 @@ endclass
 
 class bus_driver #(parameter int width = 16, parameter int drvs = 4);
 
-    mailbox mbx_agent_driver;
-    virtual dut_compl_if.DRV vif;
+    mailbox #(transaction #(width)) mbx_agent_driver;
+    virtual dut_compl_if #(width, drvs, 16).DRV vif;
 
     // The child processes are instantiated.
     fifo_emulator #(width, 0) hijo_0;
@@ -55,7 +55,7 @@ class bus_driver #(parameter int width = 16, parameter int drvs = 4);
     fifo_emulator #(width, 2) hijo_2;
     fifo_emulator #(width, 3) hijo_3;
 
-    function new(mailbox mbx, virtual dut_compl_if.DRV vif_in);
+    function new(mailbox #(transaction #(width)) mbx, virtual dut_compl_if #(width, drvs, 16).DRV vif_in);
         this.mbx_agent_driver = mbx;
         this.vif = vif_in;
 
