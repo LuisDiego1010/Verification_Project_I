@@ -1,8 +1,7 @@
-#!/bin/bash
-# grabbing our defaults and defining the new output directory outside of src
+source /mnt/vol_NFS_rh003/estudiantes/archivos_config/synopsys_tools2.sh
 SEED=${SEED:-$RANDOM}
-WIDTH=${WIDTH:-16}
-DRVS=${DRVS:-6}
+WIDTH=${WIDTH:-32}
+DRVS=${DRVS:-4}
 OUT_DIR="../Resultados"
 
 mkdir -p $OUT_DIR

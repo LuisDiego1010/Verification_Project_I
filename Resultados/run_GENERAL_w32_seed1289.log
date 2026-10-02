@@ -1,0 +1,78 @@
+Command: /mnt/vol_NFS_rh003/Est_Veri_II2026/LEZCANO_FERNANDEZ_CRISTHIAN_VeriII26/Verification_Project_I/src/../Resultados/salida -cm line+tgl+cond+fsm+branch+assert -cm_dir ../Resultados/salida.vdb -cm_name GENERAL +ntb_random_seed=1289 +TEST_CASE=GENERAL +NUM_TX=0 -l ../Resultados/run_GENERAL_w32_seed1289.log
+Chronologic VCS simulator copyright 1991-2020
+Contains Synopsys proprietary information.
+Compiler version R-2020.12-SP2_Full64; Runtime version R-2020.12-SP2_Full64;  Oct  2 10:58 2026
+[TEST] ==================================================
+[TEST] INICIANDO PRUEBA general (semilla 1289)
+[TEST] Generando transacciones por terminal, 5..20 cada una (fifo_depth=16)...
+[TEST] ==================================================
+[ENV] ==================================================
+[ENV] INICIANDO AMBIENTE DE VERIFICACION
+[ENV] ==================================================
+[GEN] Terminal 0: 14 transacciones
+[GEN 0] origen=0 destino=21 retardo=12 dato=3796ef
+[GEN 1] origen=0 destino=3 retardo=14 dato=679c08
+[GEN 2] origen=0 destino=1 retardo=13 dato=072e83
+[GEN 3] origen=0 destino=255 retardo=6 dato=364d72
+[GEN 4] origen=0 destino=1 retardo=9 dato=d4e3f3
+[GEN 5] origen=0 destino=2 retardo=19 dato=6a03dc
+[GEN 6] origen=0 destino=2 retardo=1 dato=9ef569
+[GEN 7] origen=0 destino=2 retardo=13 dato=451263
+[GEN 8] origen=0 destino=3 retardo=2 dato=d20602
+[GEN 9] origen=0 destino=2 retardo=6 dato=285271
+[GEN 10] origen=0 destino=254 retardo=10 dato=2ac20a
+[GEN 11] origen=0 destino=1 retardo=16 dato=799042
+[GEN 12] origen=0 destino=255 retardo=15 dato=0f2724
+[GEN 13] origen=0 destino=3 retardo=6 dato=db60f5
+[GEN] Terminal 1: 7 transacciones
+[GEN 14] origen=1 destino=0 retardo=0 dato=2f60c3
+[GEN 15] origen=1 destino=2 retardo=13 dato=bd39fd
+[GEN 16] origen=1 destino=0 retardo=20 dato=501d44
+[GEN 17] origen=1 destino=3 retardo=20 dato=d51253
+[GEN 18] origen=1 destino=0 retardo=5 dato=48e7b8
+[GEN 19] origen=1 destino=2 retardo=13 dato=e80e4f
+[GEN 20] origen=1 destino=2 retardo=19 dato=f35056
+[GEN] Terminal 2: 7 transacciones
+[GEN 21] origen=2 destino=1 retardo=14 dato=e0ff41
+[GEN 22] origen=2 destino=3 retardo=8 dato=9d6c7c
+[GEN 23] origen=2 destino=51 retardo=7 dato=315c10
+[GEN 24] origen=2 destino=255 retardo=10 dato=730b37
+[GEN 25] origen=2 destino=3 retardo=11 dato=715348
+[GEN 26] origen=2 destino=0 retardo=8 dato=9b260e
+[GEN 27] origen=2 destino=1 retardo=16 dato=086bdd
+[GEN] Terminal 3: 10 transacciones
+[GEN 28] origen=3 destino=0 retardo=18 dato=31f570
+[GEN 29] origen=3 destino=255 retardo=6 dato=555adb
+[GEN 30] origen=3 destino=0 retardo=20 dato=bc8c86
+[GEN 31] origen=3 destino=0 retardo=13 dato=e86eae
+[GEN 32] origen=3 destino=255 retardo=11 dato=f7c2f9
+[GEN 33] origen=3 destino=2 retardo=8 dato=5d6c4d
+[GEN 34] origen=3 destino=143 retardo=19 dato=91cfe7
+[GEN 35] origen=3 destino=71 retardo=20 dato=7ed062
+[GEN 36] origen=3 destino=1 retardo=19 dato=37d451
+[GEN 37] origen=3 destino=2 retardo=12 dato=da7306
+[ENV] Generacion de estimulos completada. Esperando vaciado de FIFOs...
+[DRV] Terminal 0: ocupacion maxima=13, veces que se lleno (stall)=0, underflow=0
+[DRV] Terminal 1: ocupacion maxima=5, veces que se lleno (stall)=0, underflow=0
+[DRV] Terminal 2: ocupacion maxima=6, veces que se lleno (stall)=0, underflow=0
+[DRV] Terminal 3: ocupacion maxima=8, veces que se lleno (stall)=0, underflow=0
+[SB] unicast=28 broadcast=5 invalidos=5 a_si_mismo=0 recepciones_esperadas=43
+[CHK] ok=43 unexpected=0 out_of_order=0 missing=0
+[CHK] retardo min=380.00 prom=1160.70 max=1410.00 (ns)
+[CHK] Archivo reporte_general_w32_seed1289.csv generado con 43 registros
+[ENV] ==================================================
+[ENV] SIMULACION FINALIZADA
+[ENV] ==================================================
+[TEST] ==================================================
+[TEST] RESULTADO: PASS (43 paquetes correctos)
+[TEST] ==================================================
+$finish called from file "testbench.sv", line 87.
+$finish at simulation time             15395000
+
+---------------------------------------------------------------------------
+VCS Coverage Metrics: during simulation line, cond, FSM, branch, tgl was monitored
+---------------------------------------------------------------------------
+           V C S   S i m u l a t i o n   R e p o r t 
+Time: 15395000 ps
+CPU Time:      1.770 seconds;       Data structure size:   1.1Mb
+Fri Oct  2 10:58:24 2026

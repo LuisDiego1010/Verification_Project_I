@@ -1,0 +1,75 @@
+Command: /mnt/vol_NFS_rh003/Est_Veri_II2026/LEZCANO_FERNANDEZ_CRISTHIAN_VeriII26/Verification_Project_I/src/../Resultados/salida -cm line+tgl+cond+fsm+branch+assert -cm_dir ../Resultados/salida.vdb -cm_name OVERFLOW +ntb_random_seed=1289 +TEST_CASE=OVERFLOW -l ../Resultados/run_OVERFLOW_w32_seed1289.log
+Chronologic VCS simulator copyright 1991-2020
+Contains Synopsys proprietary information.
+Compiler version R-2020.12-SP2_Full64; Runtime version R-2020.12-SP2_Full64;  Oct  2 10:58 2026
+[TEST] ==================================================
+[TEST] INICIANDO PRUEBA overflow (semilla 1289)
+[TEST] Generando 20 transacciones en total (fifo_depth=2)...
+[TEST] ==================================================
+[ENV] ==================================================
+[ENV] INICIANDO AMBIENTE DE VERIFICACION
+[ENV] ==================================================
+[GEN] Modo overflow: inundando terminal 0 con 20 transacciones
+[GEN 0] origen=0 destino=3 retardo=0 dato=8fc40e
+[GEN 1] origen=0 destino=1 retardo=0 dato=957023
+[GEN 2] origen=0 destino=2 retardo=0 dato=1025ac
+[GEN 3] origen=0 destino=3 retardo=0 dato=0def26
+[GEN 4] origen=0 destino=3 retardo=0 dato=3796ef
+[GEN 5] origen=0 destino=2 retardo=0 dato=679c08
+[GEN 6] origen=0 destino=3 retardo=0 dato=072e83
+[GEN 7] origen=0 destino=3 retardo=0 dato=364d72
+[GEN 8] origen=0 destino=3 retardo=0 dato=d4e3f3
+[GEN 9] origen=0 destino=1 retardo=0 dato=6a03dc
+[GEN 10] origen=0 destino=2 retardo=0 dato=9ef569
+[GEN 11] origen=0 destino=1 retardo=0 dato=451263
+[GEN 12] origen=0 destino=1 retardo=0 dato=d20602
+[GEN 13] origen=0 destino=3 retardo=0 dato=285271
+[GEN 14] origen=0 destino=3 retardo=0 dato=2ac20a
+[GEN 15] origen=0 destino=3 retardo=0 dato=799042
+[GEN 16] origen=0 destino=2 retardo=0 dato=0f2724
+[GEN 17] origen=0 destino=3 retardo=0 dato=db60f5
+[GEN 18] origen=0 destino=1 retardo=0 dato=2f60c3
+[GEN 19] origen=0 destino=3 retardo=0 dato=bd39fd
+[ENV] Generacion de estimulos completada. Esperando vaciado de FIFOs...
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[FIFO_EMU] Terminal 0: FIFO llena (2/2), esperando espacio (overflow forzado)
+[DRV] Terminal 0: ocupacion maxima=2, veces que se lleno (stall)=18, underflow=0
+[DRV] Terminal 1: ocupacion maxima=0, veces que se lleno (stall)=0, underflow=0
+[DRV] Terminal 2: ocupacion maxima=0, veces que se lleno (stall)=0, underflow=0
+[DRV] Terminal 3: ocupacion maxima=0, veces que se lleno (stall)=0, underflow=0
+[SB] unicast=20 broadcast=0 invalidos=0 a_si_mismo=0 recepciones_esperadas=20
+[CHK] ok=20 unexpected=0 out_of_order=0 missing=0
+[CHK] retardo min=380.00 prom=380.50 max=390.00 (ns)
+[CHK] Archivo reporte_overflow_w32_seed1289.csv generado con 20 registros
+[ENV] ==================================================
+[ENV] SIMULACION FINALIZADA
+[ENV] ==================================================
+[TEST] ==================================================
+[TEST] RESULTADO: PASS (20 paquetes correctos)
+[TEST] ==================================================
+$finish called from file "testbench.sv", line 87.
+$finish at simulation time              9555000
+
+---------------------------------------------------------------------------
+VCS Coverage Metrics: during simulation line, cond, FSM, branch, tgl was monitored
+---------------------------------------------------------------------------
+           V C S   S i m u l a t i o n   R e p o r t 
+Time: 9555000 ps
+CPU Time:      2.210 seconds;       Data structure size:   1.1Mb
+Fri Oct  2 10:58:34 2026

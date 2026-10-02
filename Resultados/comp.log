@@ -1,0 +1,127 @@
+Command: vcs -Mupdate -sverilog -full64 testbench.sv -o ../Resultados/salida -Mdir=../Resultados/csrc \
+-pvalue+testbench.p_width=32 -pvalue+testbench.p_drvs=4 -kdb -lca -debug_acc+all \
+-debug_region+cell+encrypt -l ../Resultados/comp.log +lint=TFIPC-L -cm line+tgl+cond+fsm+branch+assert \
+-cm_dir ../Resultados/salida.vdb -P /mnt/vol_NFS_rh003/tools/verdi/R-2020.12-SP2/share/PLI/VCS/linux64/verdi.tab \
+
+                         Chronologic VCS (TM)
+       Version R-2020.12-SP2_Full64 -- Fri Oct  2 10:58:13 2026
+
+                    Copyright (c) 1991 - 2021 Synopsys, Inc.
+   This software and the associated documentation are proprietary to Synopsys,
+ Inc. This software may only be used in accordance with the terms and conditions
+ of a written license agreement with Synopsys, Inc. All other use, reproduction,
+            or distribution of this software is strictly prohibited.
+
+
+Warning-[LCA_FEATURES_ENABLED] Usage warning
+  LCA features enabled by '-lca' argument on the command line.  For more 
+  information regarding list of LCA features please refer to Chapter "LCA 
+  features" in the VCS Release Notes
+
+Parsing design file 'testbench.sv'
+Parsing included file 'fifo.sv'.
+Back to file 'testbench.sv'.
+Parsing included file 'Library.sv'.
+Back to file 'testbench.sv'.
+Parsing included file 'interface.sv'.
+Back to file 'testbench.sv'.
+Parsing included file 'transaction.sv'.
+Back to file 'testbench.sv'.
+Parsing included file 'generator.sv'.
+Back to file 'testbench.sv'.
+Parsing included file 'agent.sv'.
+Back to file 'testbench.sv'.
+Parsing included file 'driver.sv'.
+Back to file 'testbench.sv'.
+Parsing included file 'monitor.sv'.
+Back to file 'testbench.sv'.
+Parsing included file 'scoreboard.sv'.
+Back to file 'testbench.sv'.
+Parsing included file 'checker.sv'.
+Back to file 'testbench.sv'.
+Parsing included file 'env.sv'.
+Back to file 'testbench.sv'.
+Parsing included file 'test.sv'.
+Back to file 'testbench.sv'.
+Top Level Modules:
+       fifo_flops_no_full
+       fifo_ltch
+       fifo_ltch_no_rst
+       ntrpt_cam_fifo
+       mem_latch
+       bs_gnrtr
+       prll_rgstr
+       prll_bs_gnrtr_n_rbtr_fifo
+       testbench
+assign 32 testbench.p_width (Command line)
+assign 4 testbench.p_drvs (Command line)
+TimeScale is 1 ns / 1 ps
+
+Warning-[SIOB] Select index out of bounds
+Library.sv, 1072
+"D_push[(bits - 1):(bits - 8)]"
+  The select index is out of declared bounds : [0:0].
+  In module instance : _bus_[0].ntrfs[0].prll_bus_instance 
+  _bus_[0].ntrfs[1].prll_bus_instance _bus_[0].ntrfs[2].prll_bus_instance 
+  _bus_[0].ntrfs[3].prll_bus_instance 
+  In module : prll_bs_ntrfs.
+
+VCS Coverage Metrics Release R-2020.12-SP2_Full64 Copyright (c) 1991-2020 by Synopsys Inc.
+
+Warning-[INTFDV] VCD dumping of interface/program/package
+testbench.sv, 70
+  Selective VCD dumping of interface 'dut_compl_if' is not supported.  
+  Selective VCD dumping for interfaces, packages and programs is not 
+  supported.
+  Use full VCD dumping '$dumpvars(0)', or use VPD or FSDB dumping, recompile 
+  with '-debug_access'.
+
+Notice: Ports coerced to inout, use -notice for details
+Starting vcs inline pass...
+27 modules and 0 UDP read.
+recompiling package vcs_paramclassrepository
+recompiling module prll_d_reg
+recompiling module prll_d_ltch_no_rst
+recompiling module prll_d_ltch
+recompiling module neg_edge
+recompiling module fifo_flops
+recompiling module fifo_flops_no_full
+recompiling module fifo_ltch
+recompiling module fifo_ltch_no_rst
+recompiling module rst_lgc
+recompiling module ntrpt_cam_fifo
+recompiling module mem_latch
+recompiling module tri_buf
+recompiling module parallel_serial
+recompiling module serializer
+recompiling module Read_st_Mchn
+recompiling module Write_st_Mchn
+recompiling module bs_ntrfs
+recompiling module bs_gnrtr
+recompiling module Arbiter_st_Mchn
+recompiling module bs_ntrfs_n_rbtr
+recompiling module bs_gnrtr_n_rbtr
+recompiling module prll_rgstr
+recompiling module prll_bs_ntrfs
+recompiling module prll_bs_gnrtr_n_rbtr_fifo
+recompiling module dut_compl_if
+recompiling module testbench
+All of 27 modules done
+rm -f _cuarc*.so _csrc*.so pre_vcsobj_*.so share_vcsobj_*.so
+if [ -x /mnt/vol_NFS_rh003/Est_Veri_II2026/LEZCANO_FERNANDEZ_CRISTHIAN_VeriII26/Verification_Project_I/src/../Resultados/salida \
+]; then chmod a-x /mnt/vol_NFS_rh003/Est_Veri_II2026/LEZCANO_FERNANDEZ_CRISTHIAN_VeriII26/Verification_Project_I/src/../Resultados/salida; \
+fi
+g++  -o /mnt/vol_NFS_rh003/Est_Veri_II2026/LEZCANO_FERNANDEZ_CRISTHIAN_VeriII26/Verification_Project_I/src/../Resultados/salida \
+-rdynamic  -Wl,-rpath='$ORIGIN'/salida.daidir -Wl,-rpath=./salida.daidir -Wl,-rpath=/mnt/vol_NFS_rh003/tools/vcs/R-2020.12-SP2/linux64/lib \
+-L/mnt/vol_NFS_rh003/tools/vcs/R-2020.12-SP2/linux64/lib  -Wl,-rpath-link=./  /usr/lib64/libnuma.so.1 \
+objs/amcQw_d.o   _660109_archive_1.so  SIM_l.o      rmapats_mop.o rmapats.o rmar.o \
+rmar_nd.o  rmar_llvm_0_1.o rmar_llvm_0_0.o           -lvirsim -lerrorinf -lsnpsmalloc \
+-lvfs    -lvcsnew -lsimprofile -lreader_common /mnt/vol_NFS_rh003/tools/vcs/R-2020.12-SP2/linux64/lib/libBA.a \
+-luclinative /mnt/vol_NFS_rh003/tools/vcs/R-2020.12-SP2/linux64/lib/vcs_tls.o   -Wl,-whole-archive \
+-lvcsucli    -Wl,-no-whole-archive        _vcs_pli_stub_.o   /mnt/vol_NFS_rh003/tools/vcs/R-2020.12-SP2/linux64/lib/vcs_save_restore_new.o \
+/mnt/vol_NFS_rh003/tools/verdi/R-2020.12-SP2/share/PLI/VCS/LINUX64/pli.a -ldl -lm \
+-lc -lpthread -ldl 
+/mnt/vol_NFS_rh003/Est_Veri_II2026/LEZCANO_FERNANDEZ_CRISTHIAN_VeriII26/Verification_Project_I/src/../Resultados/salida \
+up to date
+CPU time: 5.359 seconds to compile + 1.064 seconds to elab + .718 seconds to link
+Verdi KDB elaboration done and the database successfully generated: 0 error(s), 0 warning(s)

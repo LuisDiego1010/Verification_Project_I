@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<!DOCTYPE cov SYSTEM "ucdb_srcinfo.dtd">
+  <srcinfo name="/mnt/vol_NFS_rh003/Est_Veri_II2026/LEZCANO_FERNANDEZ_CRISTHIAN_VeriII26/Verification_Project_I/src"  >
+    <ucapi_version  major_ver="13"  minor_ver="1"  patch_str="R-2020.12-SP2"  />
+      <fileinfo name="testbench.sv"  id="0"  timestamp="1790959681"  />
+      <fileinfo name="fifo.sv"  id="1"  timestamp="1790959681"  />
+      <fileinfo name="Library.sv"  id="2"  timestamp="1790959681"  />
+      <fileinfo name="interface.sv"  id="3"  timestamp="1790959681"  />
+      <fileinfo name="transaction.sv"  id="4"  timestamp="1790959681"  />
+      <fileinfo name="generator.sv"  id="5"  timestamp="1790959681"  />
+      <fileinfo name="agent.sv"  id="6"  timestamp="1790959681"  />
+      <fileinfo name="driver.sv"  id="7"  timestamp="1790959681"  />
+      <fileinfo name="monitor.sv"  id="8"  timestamp="1790959681"  />
+      <fileinfo name="scoreboard.sv"  id="9"  timestamp="1790959681"  />
+      <fileinfo name="checker.sv"  id="10"  timestamp="1790959681"  />
+      <fileinfo name="env.sv"  id="11"  timestamp="1790959681"  />
+      <fileinfo name="test.sv"  id="12"  timestamp="1790959681"  />
+      <fileinfo name=""  id="13"  />
+    </srcinfo>
