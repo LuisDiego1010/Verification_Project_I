@@ -7,6 +7,7 @@ class expected_item #(parameter int width = 16, parameter int drvs = 4);
     // this receiver first
     bit overtaken;
 
+    // standard constructor throwing the id and trans together
     function new(
         int rx_id,
         transaction #(width, drvs) tr
@@ -21,11 +22,12 @@ endclass
 // Class bus_scoreboard.sv. The bus_scoreboard class is responsible for the reference model of the bus: for every transaction it computes which terminals must receive it and sends one expectation per receiver to the checker.
 class bus_scoreboard #(parameter int width = 16, parameter int drvs = 4);
 
+  // simple enum to help organize the types of destinations we might see
     typedef enum {DST_UNICAST, DST_BCAST, DST_INVALID, DST_SELF} dst_kind_e;
 
     mailbox #(transaction #(width, drvs)) agent_sb_mbx;
     mailbox #(expected_item #(width, drvs)) sb_chk_mbx;
-    // Address treated as broadcast by the reference model (set by the test)
+    // Address treated as broadcast by the reference model 
     bit [7:0] bcast_id;
 
     int n_unicast;
@@ -34,6 +36,7 @@ class bus_scoreboard #(parameter int width = 16, parameter int drvs = 4);
     int n_self;
     int n_expected;
 
+    // standard constructor just hooking up mailboxes and setting the default broadcast address
     function new(
         mailbox #(transaction #(width, drvs)) agent_sb_mbx,
         mailbox #(expected_item #(width, drvs)) sb_chk_mbx
@@ -43,6 +46,7 @@ class bus_scoreboard #(parameter int width = 16, parameter int drvs = 4);
         this.bcast_id = 8'hFF;
     endfunction
 
+    // simple helper figuring out if it's unicast, broadcast, total garbage, or pointing to itself
     function dst_kind_e classify(transaction #(width, drvs) tr);
         if (tr.dst_addr == bcast_id) return DST_BCAST;
         if (tr.dst_addr >= drvs) return DST_INVALID;
@@ -51,12 +55,14 @@ class bus_scoreboard #(parameter int width = 16, parameter int drvs = 4);
         return DST_UNICAST;
     endfunction
 
+    // wraps the transaction in an expected item and tosses it to the checker
     function void add_expected(int rx_id, transaction #(width, drvs) tr);
         expected_item #(width, drvs) e = new(rx_id, tr);
         void'(sb_chk_mbx.try_put(e));
         n_expected++;
     endfunction
 
+    // main logic loop fetching from the agent and sorting it by classification
     task run();
         transaction #(width, drvs) tr;
         forever begin
@@ -66,6 +72,7 @@ class bus_scoreboard #(parameter int width = 16, parameter int drvs = 4);
                     add_expected(tr.dst_addr, tr);
                     n_unicast++;
                 end
+                // if it broadcast we gotta duplicate the expectation for every terminal except the sender
                 DST_BCAST: begin
                     for (int d = 0; d < drvs; d++) begin
                         if (d != tr.src_terminal) add_expected(d, tr);
@@ -78,6 +85,7 @@ class bus_scoreboard #(parameter int width = 16, parameter int drvs = 4);
         end
     endtask
 
+    // dumps the final tallies to the console
     function void report();
         $display("[SB] unicast=%0d broadcast=%0d invalidos=%0d a_si_mismo=%0d recepciones_esperadas=%0d",
                  n_unicast, n_bcast, n_invalid, n_self, n_expected);

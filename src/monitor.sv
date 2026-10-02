@@ -5,6 +5,7 @@ class mon_child #(parameter int width = 16, parameter int drvs = 4);
     mailbox #(transaction #(width, drvs)) child_parent_mbx;
     int id;
 
+    // basic constructor setting up the virtual interface and mailbox
     function new(
         int id,
         virtual dut_compl_if #(width, drvs) vif,
@@ -15,6 +16,7 @@ class mon_child #(parameter int width = 16, parameter int drvs = 4);
         this.child_parent_mbx = child_parent_mbx;
     endfunction
 
+    // loop watching the clocking block and packing the captured data into a transaction
     task run();
         transaction #(width, drvs) t;
         forever begin
@@ -39,6 +41,7 @@ class bus_monitor #(parameter int width = 16, parameter int drvs = 4);
     mailbox #(transaction #(width, drvs)) child_parent_mbx;
     mon_child #(width, drvs) children[drvs];
 
+    // instantiates all the children watchers and wires their mailboxes
     function new(
         virtual dut_compl_if #(width, drvs) vif,
         mailbox #(transaction #(width, drvs)) mon_chk_mbx
@@ -51,6 +54,7 @@ class bus_monitor #(parameter int width = 16, parameter int drvs = 4);
         end
     endfunction
 
+    // starts all child threads and continuously forwards their observations to the checker
     task run();
         transaction #(width, drvs) t;
         foreach (children[i]) begin

@@ -1,13 +1,14 @@
 `timescale 1ns/1ps
 
 // DUT sources. Library.sv includes "../FIFO_Latches/fifo.sv" unless FIFOS is defined, so fifo.sv is included here and the macro set beforehand.
+
 `ifndef FIFOS
     `define FIFOS
     `include "fifo.sv"
 `endif
-`include "Library.sv"
 
-// Environment sources, in dependency order
+// dropping in all our verification environment classes
+`include "Library.sv"
 `include "interface.sv"
 `include "transaction.sv"
 `include "generator.sv"
@@ -24,7 +25,7 @@ module testbench;
 
     // Packet width (16, 32 or 64) and number of terminals
     parameter int p_width = 16;
-    parameter int p_drvs = 4;
+    parameter int p_drvs = 6;
     // Broadcast ID given to the DUT and to the environment. The RTL compares against 8'hFF internally, so any other value is expected to fail
     parameter bit [7:0] p_bcast = 8'hFF;
 
@@ -36,7 +37,7 @@ module testbench;
         forever #5 clk = ~clk;
     end
 
-    // bits = 1: one bus (it is the number of buses, not the data width)
+    // bits = 1: one bus it is the number of buses not the data width
     dut_compl_if #(p_width, p_drvs, 1) vif (
         .clk(clk)
     );
@@ -56,6 +57,7 @@ module testbench;
         .D_push(vif.D_push)
     );
 
+    // initial block for running tests
     initial begin
         if (!(p_width inside {16, 32, 64})) begin
             $fatal(1, "[TOP] p_width debe ser 16, 32 o 64 (se recibio %0d)", p_width);
@@ -75,10 +77,12 @@ module testbench;
         fork
             test.run();
         join_none
+        // bumping the reset line slightly after 0 to make sure the flop catches the edge
         #1 vif.reset = 1'b1;
         repeat (5) @(posedge clk);
         vif.reset = 1'b0;
 
+        // sitting back while the test runs itself
         wait fork;
         $finish;
     end

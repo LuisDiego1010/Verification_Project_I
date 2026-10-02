@@ -13,8 +13,8 @@ interface dut_compl_if #(
     logic [width-1:0] D_pop[bits-1:0][drvs-1:0];
     logic [width-1:0] D_push[bits-1:0][drvs-1:0];
 
-    // Driver view: drives the FIFO outputs, samples the DUT requests.
-    // Outputs change 1ns after the edge so the DUT never sees a race.
+    
+    // driver clocking block. adds a 1ns delay on outputs so we don't screw up setup/hold for the dut
     clocking cb_drv @(posedge clk);
         default input #1step output #1ns;
         output pndng, D_pop;

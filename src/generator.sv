@@ -14,11 +14,16 @@ class generator #(parameter int width = 16, parameter int drvs = 4);
     int unsigned pct_bcast;
     int unsigned pct_inv;
     bit [7:0] bcast_id;
+    // force every unicast packet to address itself
+    bit force_self;
+    // used to flood one terminal FIFO for the overflow test
+    int flood_terminal;
 
     // Transactions created for each terminal and in total
     int tx_per_term[drvs];
     int total_tx;
 
+    // setting up default test knobs and corner case flags
     function new(
         mailbox #(transaction #(width, drvs)) gen_agent_mbx,
         int num_transactions
@@ -33,10 +38,12 @@ class generator #(parameter int width = 16, parameter int drvs = 4);
         this.pct_bcast = 15;
         this.pct_inv = 15;
         this.bcast_id = 8'hFF;
+        this.force_self = 0;
+        this.flood_terminal = -1;
         this.total_tx = 0;
     endfunction
 
-    // Creates one transaction; src < 0 lets the solver pick the source
+    // instantiates the transaction and relies on systemverilog constraints to randomize it based on our knobs
     task create(int src);
         transaction #(width, drvs) pkt;
         pkt = new();
@@ -45,6 +52,7 @@ class generator #(parameter int width = 16, parameter int drvs = 4);
         pkt.pct_bcast = pct_bcast;
         pkt.pct_inv = pct_inv;
         pkt.bcast_id = bcast_id;
+        pkt.force_self = force_self;
         if (src >= 0) begin
             if (!pkt.randomize() with { src_terminal == src; }) begin
                 $fatal(1, "[GEN] Fallo la aleatorizacion de la transaccion %0d", total_tx);
@@ -59,8 +67,13 @@ class generator #(parameter int width = 16, parameter int drvs = 4);
         total_tx++;
     endtask
 
+    // loop deciding how many trans to send. either floods one terminal for the overflow test or spreads them out randomly
     task run();
-        if (num_transactions > 0) begin
+        if (flood_terminal >= 0) begin
+            // Every transaction comes from the same terminal back to back.
+            $display("[GEN] Modo overflow: inundando terminal %0d con %0d transacciones", flood_terminal, num_transactions);
+            for (int i = 0; i < num_transactions; i++) create(flood_terminal);
+        end else if (num_transactions > 0) begin
             $display("[GEN] Creando %0d transacciones con origen aleatorio", num_transactions);
             for (int i = 0; i < num_transactions; i++) create(-1);
         end else begin
@@ -74,3 +87,4 @@ class generator #(parameter int width = 16, parameter int drvs = 4);
     endtask
 
 endclass
+

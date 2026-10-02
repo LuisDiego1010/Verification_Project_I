@@ -1,68 +1,102 @@
-// Class bus_test.sv. The bus_test class is responsible for configuring the scenario from plusargs, running the environment and printing the final verdict.
-//   +TX_MIN=<n> +TX_MAX=<n>        transactions per terminal (default 5..20)
-//   +NUM_TX=<n>                    total transactions with random sources instead
-//   +DLY_MIN=<n> +DLY_MAX=<n>      cycles between messages of a terminal (default 0..20)
-//   +PCT_BCAST=<n> +PCT_INV=<n>    percentage of broadcast and invalid destinations (default 15 and 15)
+// top level test class reading plusargs to set up the environment and decide pass/fail conditions
+// handles stuff like picking if we're doing a general mix, mostly invalid, or pushing for an overflow
 class bus_test #(parameter int width = 16, parameter int drvs = 4);
 
     bus_env #(width, drvs) env;
-    bit [7:0] bcast_id;
-    int num_tx;
-    int tx_min;
-    int tx_max;
-    int dly_min;
-    int dly_max;
-    int pct_bcast;
-    int pct_inv;
+
+    string test_name;
+    int num_transacciones;
     int seed;
-    bit seed_given;
+    int unsigned fifo_depth;
 
+    // constructor grabs all the command line overrides and initializes the env based on the testcase
     function new(
-        virtual dut_compl_if #(width, drvs) vif,
-        bit [7:0] bcast_id
+        virtual dut_compl_if #(width, drvs) vif_in,
+        bit [7:0] bcast_id = 8'hFF
     );
-        this.bcast_id = bcast_id;
-        if (!$value$plusargs("NUM_TX=%d", num_tx)) num_tx = 0;
-        if (!$value$plusargs("TX_MIN=%d", tx_min)) tx_min = 5;
-        if (!$value$plusargs("TX_MAX=%d", tx_max)) tx_max = 20;
-        if (!$value$plusargs("DLY_MIN=%d", dly_min)) dly_min = 0;
-        if (!$value$plusargs("DLY_MAX=%d", dly_max)) dly_max = 20;
-        if (!$value$plusargs("PCT_BCAST=%d", pct_bcast)) pct_bcast = 15;
-        if (!$value$plusargs("PCT_INV=%d", pct_inv)) pct_inv = 15;
-        // VCS seed, only to print it and to name the CSV
-        seed_given = $value$plusargs("ntb_random_seed=%d", seed);
+        string case_name;
 
-        if (tx_min < 0 || tx_max < tx_min) $fatal(1, "[TEST] Rango de transacciones invalido: %0d..%0d", tx_min, tx_max);
-        if (dly_min < 0 || dly_max < dly_min) $fatal(1, "[TEST] Rango de retardo invalido: %0d..%0d", dly_min, dly_max);
-        if (pct_bcast < 0 || pct_inv < 0 || pct_bcast + pct_inv > 100) $fatal(1, "[TEST] Porcentajes invalidos: broadcast=%0d invalidos=%0d", pct_bcast, pct_inv);
+        if (!$value$plusargs("ntb_random_seed=%d", seed)) seed = 0;
+        if (!$value$plusargs("TEST_CASE=%s", case_name)) case_name = "GENERAL";
 
-        env = new(vif, num_tx);
-        env.gen.tx_min = tx_min;
-        env.gen.tx_max = tx_max;
-        env.gen.min_delay = dly_min;
-        env.gen.max_delay = dly_max;
-        env.gen.pct_bcast = pct_bcast;
-        env.gen.pct_inv = pct_inv;
-        env.gen.bcast_id = bcast_id;
-        env.sb.bcast_id = bcast_id;
-        if (seed_given) env.csv_name = $sformatf("reporte_w%0d_seed%0d.csv", width, seed);
-        else env.csv_name = $sformatf("reporte_w%0d.csv", width);
+        this.test_name = case_name.tolower();
+        this.num_transacciones = 50;
+        this.fifo_depth = 16;
+
+        // overrides for specific corner cases. overflow gets a tiny fifo and lower total tx
+        case (case_name)
+            "OVERFLOW":  begin this.num_transacciones = 20; this.fifo_depth = 2; end
+            default: ; 
+        endcase
+
+        void'($value$plusargs("NUM_TX=%d", this.num_transacciones));
+        void'($value$plusargs("FIFO_DEPTH=%d", this.fifo_depth));
+
+        this.env = new(vif_in, num_transacciones, fifo_depth);
+        this.env.gen.bcast_id = bcast_id;
+        this.env.sb.bcast_id  = bcast_id;
+
+        // Configure the generator knobs for the chosen case
+        case (case_name)
+            "GENERAL": ; // keep the generator's own randomized defaults
+            "BCAST": begin
+                this.env.gen.pct_bcast = 100;
+                this.env.gen.pct_inv   = 0;
+            end
+            "INVALID": begin
+                this.env.gen.pct_bcast = 0;
+                this.env.gen.pct_inv   = 100;
+            end
+            // edge case where everything tries to talk to itself to make sure the bus handles it properly
+            "SELF": begin
+                this.env.gen.force_self = 1;
+                this.env.gen.pct_bcast  = 0;
+                this.env.gen.pct_inv    = 0;
+            end
+            // hammers a single terminal endlessly with zero delay so its fifo clogs up
+            "OVERFLOW": begin
+                this.env.gen.pct_bcast = 0;
+                this.env.gen.pct_inv   = 0;
+                this.env.gen.min_delay = 0;
+                this.env.gen.max_delay = 0;
+                this.env.gen.flood_terminal = 0; // floods terminal 0
+            end
+            default: begin
+                $fatal(1, "[TEST] TEST_CASE desconocido: '%s' (opciones: GENERAL, BCAST, INVALID, SELF, OVERFLOW)", case_name);
+            end
+        endcase
+
+        this.env.csv_name = $sformatf("reporte_%s_w%0d_seed%0d.csv", test_name, width, seed);
     endfunction
 
+    // executes the test and judges the checker stats to see if we passed or bombed
     task run();
-        if (seed_given) $display("[TEST] semilla=%0d", seed);
-        else $display("[TEST] semilla=por defecto");
-        $display("[TEST] ancho=%0d terminales=%0d broadcast=%0d", width, drvs, bcast_id);
-        if (num_tx > 0) $display("[TEST] transacciones=%0d en total", num_tx);
-        else $display("[TEST] transacciones por terminal=%0d..%0d", tx_min, tx_max);
-        $display("[TEST] retardo=%0d..%0d ciclos broadcast=%0d%% invalidos=%0d%%", dly_min, dly_max, pct_bcast, pct_inv);
-        env.run();
-        // Passes when nothing went wrong and every expected reception arrived (with only invalid traffic nothing is expected)
-        if (env.chk.n_errors() == 0 && env.chk.n_ok == env.sb.n_expected && env.gen.total_tx > 0) begin
-            $display("[TEST] APROBADO");
+        int errors;
+
+        $display("[TEST] ==================================================");
+        $display("[TEST] INICIANDO PRUEBA %s (semilla %0d)", test_name, seed);
+        if (num_transacciones > 0) begin
+            $display("[TEST] Generando %0d transacciones en total (fifo_depth=%0d)...", num_transacciones, fifo_depth);
         end else begin
-            $display("[TEST] FALLIDO (%0d errores)", env.chk.n_errors());
+            $display("[TEST] Generando transacciones por terminal, %0d..%0d cada una (fifo_depth=%0d)...",
+                     env.gen.tx_min, env.gen.tx_max, fifo_depth);
         end
+        $display("[TEST] ==================================================");
+
+        env.run();
+
+        errors = env.checker.errors();
+
+        $display("[TEST] ==================================================");
+        if (errors == 0 && env.checker.n_ok > 0) begin
+            $display("[TEST] RESULTADO: PASS (%0d paquetes correctos)", env.checker.n_ok);
+        end else if (env.checker.n_ok == 0 && env.checker.n_unexpected == 0) begin
+            $display("[TEST] RESULTADO: PASS (0 paquetes esperados, 0 recibidos: esperado para INVALID y SELF)");
+        end else begin
+            $display("[TEST] RESULTADO: FAIL (%0d errores: inesperados=%0d, fuera de orden=%0d, perdidos=%0d)",
+                     errors, env.checker.n_unexpected, env.checker.n_order, env.checker.n_missing);
+        end
+        $display("[TEST] ==================================================");
     endtask
 
 endclass

@@ -10,19 +10,21 @@ class transaction #(parameter int width = 16, parameter int drvs = 4);
     rand bit [width-9:0] payload;
     // Kind of destination, chosen first with the percentages below
     rand dst_kind_e kind;
-    // Picks the first invalid address, the last one, or any other
+    // Picks the first invalid address, the last one or any other
     rand int unsigned inv_sel;
 
-    // Knobs copied from the generator before randomize(), so the test can control the traffic
+    // Knobs copied from the generator before randomize so the test can control the traffic
     int unsigned min_delay;
     int unsigned max_delay;
     int unsigned pct_bcast;
     int unsigned pct_inv;
     bit [7:0] bcast_id;
+    // When set, forces every unicast packet to be addressed to its own source terminal
+    bit force_self;
 
-    // Control and reporting fields (not randomized)
+    // Control and reporting fields not randomized
+    // metadata to hold simulation info
     int rx_terminal;
-    // Timestamps in simulation time units, -1 means "not happened yet"
     real sent_time;
     real receive_time;
 
@@ -36,7 +38,7 @@ class transaction #(parameter int width = 16, parameter int drvs = 4);
         src_terminal inside {[0:drvs-1]};
     }
 
-    // Destination mix: valid terminals, broadcast and non-existent terminals
+    // sorting out the traffic composition
     constraint c_kind {
         kind dist {
             K_UNICAST := 100 - pct_bcast - pct_inv,
@@ -45,7 +47,8 @@ class transaction #(parameter int width = 16, parameter int drvs = 4);
         };
     }
 
-    // Address for each kind. Invalid means any address that is neither a terminal nor the broadcast ID; the first and last invalid addresses get extra weight because they are the edges of the range
+    // linking the address logic to whatever kind of packet the solver picked first
+    // adding weight to first/last invalid addresses to hit bounds easier
     constraint c_dst_addr {
         (kind == K_UNICAST) -> dst_addr inside {[0:drvs-1]};
         (kind == K_BCAST) -> dst_addr == bcast_id;
@@ -55,18 +58,24 @@ class transaction #(parameter int width = 16, parameter int drvs = 4);
         (kind == K_INVALID && inv_sel == 1) -> dst_addr == 254;
     }
 
-    // A terminal never receives its own packet (it holds the bus while sending), so a packet addressed to itself would never be observed
+    // stopping standard packets from hitting their own source since the dut logic breaks there
     constraint c_no_self {
-        dst_addr != src_terminal;
+        (!force_self) -> dst_addr != src_terminal;
+    }
+
+    // Directed corner case: force self-addressing on every unicast packet
+    constraint c_force_self {
+        (force_self && kind == K_UNICAST) -> dst_addr == src_terminal;
     }
 
     function new();
-        // Defaults: same traffic mix as the base test
+        // Defaults same traffic mix as the base test
         this.min_delay = 0;
         this.max_delay = 20;
         this.pct_bcast = 15;
         this.pct_inv = 15;
         this.bcast_id = 8'hFF;
+        this.force_self = 0;
         this.rx_terminal = -1;
         this.sent_time = -1;
         this.receive_time = -1;
