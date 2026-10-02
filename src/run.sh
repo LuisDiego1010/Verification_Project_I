@@ -1,43 +1,56 @@
 #!/bin/bash
-# quick hacky script to compile and run stuff once per width and seed. can override vars from the terminal if you need to test specific stuff
+# grabbing our defaults and defining the new output directory outside of src
 SEED=${SEED:-$RANDOM}
 WIDTH=${WIDTH:-16}
 DRVS=${DRVS:-6}
+OUT_DIR="../Resultados"
 
-CASES=${CASES:-"GENERAL BCAST INVALID SELF OVERFLOW"}
+mkdir -p $OUT_DIR
+SCRIPT_DIR="$PWD"
 
-# nuking old junk from previous runs so we start fresh
-echo "[RUN] Limpiando archivos de las corridas anteriores"
+# nuking old junk from previous runs in both locations just to be totally safe
+echo "[RUN] Limpiando artefactos de corridas anteriores..."
+rm -f $OUT_DIR/*.csv $OUT_DIR/*.log $OUT_DIR/*.png $OUT_DIR/*.vpd $OUT_DIR/ucli.key $OUT_DIR/vc_hdrs.h
+rm -rf $OUT_DIR/csrc $OUT_DIR/*.vdb $OUT_DIR/*.daidir $OUT_DIR/DVEfiles $OUT_DIR/simv* $OUT_DIR/salida* $OUT_DIR/novas.* $OUT_DIR/verdiLog $OUT_DIR/*.fsdb
 rm -f *.csv *.log *.png *.vpd ucli.key vc_hdrs.h
 rm -rf csrc *.vdb *.daidir DVEfiles simv* salida* novas.* verdiLog *.fsdb
 
-# Start the compilation by running the line to open VCS.
+# hitting the vcs compiler but forcing all the garbage output files to dump into the new folder
 if [ -z "$SKIP_COMPILE" ]; then
     echo "[RUN] Compilando (p_width=$WIDTH, p_drvs=$DRVS) ..."
     vcs -Mupdate -sverilog -full64 \
-        testbench.sv -o salida \
+        testbench.sv -o $OUT_DIR/salida \
+        -Mdir=$OUT_DIR/csrc \
         -pvalue+testbench.p_width=$WIDTH \
         -pvalue+testbench.p_drvs=$DRVS \
         -kdb -lca -debug_acc+all -debug_region+cell+encrypt \
-        -l comp.log +lint=TFIPC-L \
+        -l $OUT_DIR/comp.log +lint=TFIPC-L \
         -cm line+tgl+cond+fsm+branch+assert \
+        -cm_dir $OUT_DIR/salida.vdb \
         -P ${VERDI_HOME}/share/PLI/VCS/linux64/verdi.tab \
         > /dev/null \
-        || { echo "Error de compilacion (ver comp.log)"; exit 1; }
+        || { echo "Error de compilacion (ver $OUT_DIR/comp.log)"; exit 1; }
 fi
 
-# helper function to actually run a single test case, parse the logs, and grep out the delays so we can see them right in the terminal
+# helper function running a single test case
 run_case () {
     local case_name=$1
     shift
 
-    local log="run_${case_name}_w${WIDTH}_seed${SEED}.log"
+    local log="$OUT_DIR/run_${case_name}_w${WIDTH}_seed${SEED}.log"
 
     printf "[RUN] %-10s " "$case_name"
 
-    ./salida -cm line+tgl+cond+fsm+branch+assert \
+    $OUT_DIR/salida -cm line+tgl+cond+fsm+branch+assert \
+        -cm_dir $OUT_DIR/salida.vdb \
+        -cm_name $case_name \
         +ntb_random_seed=$SEED +TEST_CASE=$case_name "$@" \
         -l $log > /dev/null
+
+    local expected_csv="reporte_${case_name,,}_w${WIDTH}_seed${SEED}.csv"
+    if [ -f "$expected_csv" ]; then
+        mv "$expected_csv" $OUT_DIR/
+    fi
 
     local res
     res=$(grep -o 'RESULTADO: [A-Z]*' $log | head -1)
@@ -53,33 +66,31 @@ run_case () {
     fi
 }
 
-
-# looping through our test cases. checking if we need to do the zero num_tx trick for per-terminal random generation or if we run direct tests like overflow
 echo "[RUN] ===== p_width=$WIDTH  p_drvs=$DRVS  semilla=$SEED ====="
 
-for C in $CASES; do
-    case $C in
-        GENERAL)  run_case GENERAL  +NUM_TX=0 ;;
-        BCAST)    run_case BCAST    +NUM_TX=0 ;;
-        INVALID)  run_case INVALID  +NUM_TX=0 ;;
-        SELF)     run_case SELF     +NUM_TX=0 ;;
-        OVERFLOW) run_case OVERFLOW ;;
-        *)        run_case $C ;;
-    esac
-done
+# TEST SELECTOR
+run_case GENERAL  +NUM_TX=0
+run_case BCAST    +NUM_TX=0
+run_case INVALID  +NUM_TX=0
+run_case SELF     +NUM_TX=0
+run_case OVERFLOW
 
-echo "[RUN] Generando histogramas..."
 
-# plotting out the histograms but skipping empty csv files because some tests dont actually receive packets
-for f in reporte_*_w${WIDTH}_seed${SEED}.csv; do
+echo "[RUN] Generando los Histogramas."
+
+for f in "$OUT_DIR"/reporte_*_w${WIDTH}_seed${SEED}.csv; do
     [ -f "$f" ] || continue
-    # Saltar los CSV sin datos (INVALID y SELF no tienen recepciones)
-    [ "$(wc -l < "$f")" -gt 1 ] || { echo "[RUN] $f sin datos, se omite"; continue; }
-    gnuplot -e "csvfile='$f'" histograma.gp
+    [ "$(wc -l < "$f")" -gt 1 ] || { echo "[RUN] $(basename "$f") sin datos, se omite"; continue; }
+    
+    
+    (cd "$OUT_DIR" && gnuplot -e "csvfile='$(basename "$f")'" "$SCRIPT_DIR/histograma.gp")
 done
+
+# sweeping up any rogue verdi files
+mv novas.* verdiLog $OUT_DIR/ 2>/dev/null || true
 
 echo "[RUN] Listo (p_width=$WIDTH, semilla=$SEED)."
-echo "      Logs:        run_<caso>_w${WIDTH}_seed${SEED}.log"
-echo "      CSV:         reporte_<caso>_w${WIDTH}_seed${SEED}.csv"
-echo "      Histogramas: reporte_<caso>_w${WIDTH}_seed${SEED}_histograma.png"
-echo "      Cobertura:   verdi -cov -covdir salida.vdb &"
+echo "      Logs:        $OUT_DIR/run_<caso>_w${WIDTH}_seed${SEED}.log"
+echo "      CSV:         $OUT_DIR/reporte_<caso>_w${WIDTH}_seed${SEED}.csv"
+echo "      Histogramas: $OUT_DIR/reporte_<caso>_w${WIDTH}_seed${SEED}_histograma.png"
+echo "      Cobertura:   verdi -cov -covdir $OUT_DIR/salida.vdb &"
